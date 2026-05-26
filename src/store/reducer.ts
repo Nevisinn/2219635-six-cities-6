@@ -1,7 +1,8 @@
 import {createReducer} from '@reduxjs/toolkit';
 import {changeCity, requireAuthorization} from './action';
-import {fetchOffers, checkAuth, login} from './api-actions';
+import {fetchOffers, fetchOffer, fetchNearbyOffers, fetchReviews, submitReview, checkAuth, login} from './api-actions';
 import {Offer} from '../types/offer';
+import {Review} from '../types/review';
 import {AuthInfo} from '../types/auth-info';
 import {AuthorizationStatus} from '../types/auth-status';
 
@@ -11,6 +12,10 @@ type State = {
   isOffersLoading: boolean;
   authorizationStatus: AuthorizationStatus;
   userData: AuthInfo | null;
+  currentOffer: Offer | null;
+  nearbyOffers: Offer[];
+  reviews: Review[];
+  isOfferLoading: boolean;
 };
 
 const initialState: State = {
@@ -19,6 +24,10 @@ const initialState: State = {
   isOffersLoading: false,
   authorizationStatus: AuthorizationStatus.Unknown,
   userData: null,
+  currentOffer: null,
+  nearbyOffers: [],
+  reviews: [],
+  isOfferLoading: false,
 };
 
 const reducer = createReducer(initialState, (builder) => {
@@ -38,6 +47,26 @@ const reducer = createReducer(initialState, (builder) => {
     })
     .addCase(fetchOffers.rejected, (state) => {
       state.isOffersLoading = false;
+    })
+    .addCase(fetchOffer.pending, (state) => {
+      state.currentOffer = null;
+      state.isOfferLoading = true;
+    })
+    .addCase(fetchOffer.fulfilled, (state, action) => {
+      state.currentOffer = action.payload;
+      state.isOfferLoading = false;
+    })
+    .addCase(fetchOffer.rejected, (state) => {
+      state.isOfferLoading = false;
+    })
+    .addCase(fetchNearbyOffers.fulfilled, (state, action) => {
+      state.nearbyOffers = action.payload;
+    })
+    .addCase(fetchReviews.fulfilled, (state, action) => {
+      state.reviews = action.payload;
+    })
+    .addCase(submitReview.fulfilled, (state, action) => {
+      state.reviews = action.payload;
     })
     .addCase(checkAuth.fulfilled, (state, action) => {
       state.authorizationStatus = AuthorizationStatus.Auth;
