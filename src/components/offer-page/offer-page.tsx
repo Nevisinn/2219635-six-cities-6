@@ -1,15 +1,20 @@
 import {Link} from 'react-router-dom';
+import {useSelector} from 'react-redux';
 import ReviewList from '../review-list/review-list';
 import NearPlacesList from '../near-places-list/near-places-list';
 import Map from '../map/map';
-import {offers} from '../../mocks/offers';
 import {reviews} from '../../mocks/reviews';
-import {AMSTERDAM} from '../../mocks/city';
+import {RootState} from '../../store';
+import {getCityByName} from '../../mocks/cities';
 
 const NEAR_PLACES_COUNT = 3;
-const nearPlaces = offers.slice(0, NEAR_PLACES_COUNT);
 
 function OfferPage(): JSX.Element {
+  const allOffers = useSelector((state: RootState) => state.offers);
+  const activeCity = useSelector((state: RootState) => state.city);
+  const nearPlaces = allOffers.slice(0, NEAR_PLACES_COUNT);
+  const cityData = getCityByName(activeCity);
+
   return (
     <div className="page">
       <header className="header">
@@ -133,7 +138,7 @@ function OfferPage(): JSX.Element {
               <ReviewList reviews={reviews} />
             </div>
           </div>
-          <Map city={AMSTERDAM} offers={nearPlaces} block="offer" />
+          <Map city={cityData} offers={nearPlaces} block="offer" />
         </section>
         <div className="container">
           <section className="near-places places">

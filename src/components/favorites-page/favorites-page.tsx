@@ -6,7 +6,7 @@ import {RootState} from '../../store';
 function FavoritesPage(): JSX.Element {
   const offers = useSelector((state: RootState) => state.offers);
   const favoriteOffers = offers.filter((offer) => offer.isFavorite);
-  const cities = [...new Set(favoriteOffers.map((offer) => offer.city))];
+  const cities = [...new Set(favoriteOffers.map((offer) => offer.city.name))];
 
   return (
     <div className="page">
@@ -55,7 +55,7 @@ function FavoritesPage(): JSX.Element {
                   </div>
                   <div className="favorites__places">
                     {favoriteOffers
-                      .filter((offer) => offer.city === city)
+                      .filter((offer) => offer.city.name === city)
                       .map((offer) => (
                         <OfferCard key={offer.id} offer={offer} block="favorites" />
                       ))}

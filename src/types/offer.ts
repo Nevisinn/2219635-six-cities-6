@@ -1,9 +1,11 @@
+import {City} from './city';
+
 export type Offer = {
   id: string;
   title: string;
   type: string;
   price: number;
-  city: string;
+  city: City;
   location: {
     latitude: number;
     longitude: number;
