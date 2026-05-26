@@ -5,6 +5,7 @@ import OfferList from '../offer-list/offer-list';
 import Map from '../map/map';
 import CityList from '../city-list/city-list';
 import SortingOptions, {SortType} from '../sorting-options/sorting-options';
+import Spinner from '../spinner/spinner';
 import {RootState} from '../../store';
 import {changeCity} from '../../store/action';
 import {CITY_NAMES, getCityByName} from '../../mocks/cities';
@@ -26,12 +27,13 @@ function getSortedOffers(offers: Offer[], sort: SortType): Offer[] {
 function MainPage(): JSX.Element {
   const activeCity = useSelector((state: RootState) => state.city);
   const allOffers = useSelector((state: RootState) => state.offers);
+  const isOffersLoading = useSelector((state: RootState) => state.isOffersLoading);
   const dispatch = useDispatch();
 
   const [activeOfferId, setActiveOfferId] = useState<string | null>(null);
   const [activeSort, setActiveSort] = useState<SortType>('Popular');
 
-  const cityOffers = allOffers.filter((offer) => offer.city === activeCity);
+  const cityOffers = allOffers.filter((offer) => offer.city.name === activeCity);
   const sortedOffers = getSortedOffers(cityOffers, activeSort);
   const cityData = getCityByName(activeCity);
 
@@ -39,6 +41,10 @@ function MainPage(): JSX.Element {
     dispatch(changeCity(city));
     setActiveSort('Popular');
   };
+
+  if (isOffersLoading) {
+    return <Spinner />;
+  }
 
   return (
     <div className="page page--gray page--main">

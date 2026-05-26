@@ -3,10 +3,9 @@ import ReactDOM from 'react-dom/client';
 import {Provider} from 'react-redux';
 import App from './components/app/app';
 import {store} from './store';
-import {fillOffers} from './store/action';
-import {offers} from './mocks/offers';
+import {fetchOffers} from './store/api-actions';
 
-store.dispatch(fillOffers(offers));
+store.dispatch(fetchOffers());
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
