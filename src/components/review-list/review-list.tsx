@@ -4,9 +4,11 @@ import {Review} from '../../types/review';
 
 type ReviewListProps = {
   reviews: Review[];
+  offerId: string;
+  isAuthorized: boolean;
 };
 
-function ReviewList({reviews}: ReviewListProps): JSX.Element {
+function ReviewList({reviews, offerId, isAuthorized}: ReviewListProps): JSX.Element {
   return (
     <section className="offer__reviews reviews">
       <h2 className="reviews__title">
@@ -17,7 +19,7 @@ function ReviewList({reviews}: ReviewListProps): JSX.Element {
           <ReviewItem key={review.id} review={review} />
         ))}
       </ul>
-      <ReviewForm />
+      {isAuthorized && <ReviewForm offerId={offerId} />}
     </section>
   );
 }

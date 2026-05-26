@@ -1,5 +1,5 @@
 export type Review = {
-  id: string;
+  id: number;
   user: {
     name: string;
     avatarUrl: string;

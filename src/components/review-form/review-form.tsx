@@ -1,4 +1,7 @@
 import {ChangeEvent, FormEvent, Fragment, useState} from 'react';
+import {useDispatch} from 'react-redux';
+import {submitReview} from '../../store/api-actions';
+import {AppDispatch} from '../../store';
 
 const RATING_OPTIONS = [
   {value: '5', labelId: '5-stars', title: 'perfect'},
@@ -8,16 +11,27 @@ const RATING_OPTIONS = [
   {value: '1', labelId: '1-star', title: 'terribly'},
 ];
 
+const MIN_REVIEW_LENGTH = 50;
+const MAX_REVIEW_LENGTH = 300;
+
+type ReviewFormProps = {
+  offerId: string;
+};
+
 type FormState = {
   rating: string;
   review: string;
 };
 
-function ReviewForm(): JSX.Element {
-  const [formData, setFormData] = useState<FormState>({
-    rating: '',
-    review: '',
-  });
+function ReviewForm({offerId}: ReviewFormProps): JSX.Element {
+  const dispatch = useDispatch<AppDispatch>();
+  const [formData, setFormData] = useState<FormState>({rating: '', review: ''});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const isValid =
+    formData.rating !== '' &&
+    formData.review.length >= MIN_REVIEW_LENGTH &&
+    formData.review.length <= MAX_REVIEW_LENGTH;
 
   const handleRatingChange = (evt: ChangeEvent<HTMLInputElement>) => {
     setFormData({...formData, rating: evt.target.value});
@@ -29,6 +43,22 @@ function ReviewForm(): JSX.Element {
 
   const handleSubmit = (evt: FormEvent<HTMLFormElement>) => {
     evt.preventDefault();
+    if (!isValid) {
+      return;
+    }
+    setIsSubmitting(true);
+    dispatch(submitReview({
+      offerId,
+      comment: formData.review,
+      rating: Number(formData.rating),
+    }))
+      .unwrap()
+      .then(() => {
+        setFormData({rating: '', review: ''});
+      })
+      .finally(() => {
+        setIsSubmitting(false);
+      });
   };
 
   return (
@@ -45,6 +75,7 @@ function ReviewForm(): JSX.Element {
               type="radio"
               checked={formData.rating === value}
               onChange={handleRatingChange}
+              disabled={isSubmitting}
             />
             <label
               htmlFor={labelId}
@@ -65,12 +96,21 @@ function ReviewForm(): JSX.Element {
         placeholder="Tell how was your stay, what you like and what can be improved"
         value={formData.review}
         onChange={handleReviewChange}
+        disabled={isSubmitting}
+        minLength={MIN_REVIEW_LENGTH}
+        maxLength={MAX_REVIEW_LENGTH}
       />
       <div className="reviews__button-wrapper">
         <p className="reviews__help">
           To submit review please make sure to set <span className="reviews__star">rating</span> and describe your stay with at least <b className="reviews__text-amount">50 characters</b>.
         </p>
-        <button className="reviews__submit form__submit button" type="submit" disabled>Submit</button>
+        <button
+          className="reviews__submit form__submit button"
+          type="submit"
+          disabled={!isValid || isSubmitting}
+        >
+          Submit
+        </button>
       </div>
     </form>
   );
