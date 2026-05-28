@@ -1,34 +1,48 @@
-import {describe, it, expect} from 'vitest';
-import {render, screen} from '@testing-library/react';
-import {MemoryRouter} from 'react-router-dom';
+import {describe, it, expect, vi, beforeEach} from 'vitest';
+import {render, screen, fireEvent} from '@testing-library/react';
+import {MemoryRouter, Routes, Route} from 'react-router-dom';
 import {Provider} from 'react-redux';
 import {configureStore} from '@reduxjs/toolkit';
+import MockAdapter from 'axios-mock-adapter';
 import OfferCard from './offer-card';
 import {rootReducer} from '../../store/root-reducer';
 import {AuthorizationStatus} from '../../types/auth-status';
 import {NameSpace} from '../../types/namespace';
 import {makeMockOffer} from '../../utils/mock';
+import {createAPI} from '../../services/api';
 
-const makeStore = () =>
+const api = createAPI();
+const mockAPI = new MockAdapter(api);
+
+const makeStore = (authorizationStatus = AuthorizationStatus.Auth, offers = [makeMockOffer()]) =>
   configureStore({
     reducer: rootReducer,
     preloadedState: {
       [NameSpace.App]: {city: 'Paris', isOffersLoading: false, isOfferLoading: false},
-      [NameSpace.Data]: {offers: [], favoriteOffers: [], currentOffer: null, nearbyOffers: [], reviews: []},
-      [NameSpace.User]: {authorizationStatus: AuthorizationStatus.Auth, userData: null},
+      [NameSpace.Data]: {offers, favoriteOffers: [], currentOffer: null, nearbyOffers: [], reviews: []},
+      [NameSpace.User]: {authorizationStatus, userData: null},
     },
+    middleware: (getDefaultMiddleware) =>
+      getDefaultMiddleware({thunk: {extraArgument: api}}),
   });
 
-const renderOfferCard = (offer = makeMockOffer(), block: 'cities' | 'favorites' | 'near-places' = 'cities') =>
+const renderOfferCard = (offer = makeMockOffer(), status = AuthorizationStatus.Auth) =>
   render(
-    <Provider store={makeStore()}>
-      <MemoryRouter>
-        <OfferCard offer={offer} block={block} />
+    <Provider store={makeStore(status, [offer])}>
+      <MemoryRouter initialEntries={['/']}>
+        <Routes>
+          <Route path="/" element={<OfferCard offer={offer} block="cities" />} />
+          <Route path="/login" element={<div>Login Page</div>} />
+        </Routes>
       </MemoryRouter>
     </Provider>
   );
 
 describe('OfferCard', () => {
+  beforeEach(() => {
+    mockAPI.reset();
+  });
+
   it('should render offer title', () => {
     const offer = makeMockOffer();
     renderOfferCard(offer);
@@ -36,9 +50,9 @@ describe('OfferCard', () => {
   });
 
   it('should render offer price', () => {
-    const offer = {...makeMockOffer(), price: 150};
+    const offer = {...makeMockOffer(), price: 250};
     const {container} = renderOfferCard(offer);
-    expect(container.querySelector('.place-card__price-value')).toHaveTextContent('150');
+    expect(container.querySelector('.place-card__price-value')).toHaveTextContent('250');
   });
 
   it('should render offer type', () => {
@@ -62,14 +76,39 @@ describe('OfferCard', () => {
   it('should render bookmark button as active when isFavorite is true', () => {
     const offer = {...makeMockOffer(), isFavorite: true};
     const {container} = renderOfferCard(offer);
-    const btn = container.querySelector('.place-card__bookmark-button');
-    expect(btn).toHaveClass('place-card__bookmark-button--active');
+    expect(container.querySelector('.place-card__bookmark-button')).toHaveClass('place-card__bookmark-button--active');
   });
 
   it('should not render bookmark button as active when isFavorite is false', () => {
     const offer = {...makeMockOffer(), isFavorite: false};
     const {container} = renderOfferCard(offer);
-    const btn = container.querySelector('.place-card__bookmark-button');
-    expect(btn).not.toHaveClass('place-card__bookmark-button--active');
+    expect(container.querySelector('.place-card__bookmark-button')).not.toHaveClass('place-card__bookmark-button--active');
+  });
+
+  it('should navigate to /login when bookmark is clicked by unauthorized user', () => {
+    const offer = {...makeMockOffer(), isFavorite: false};
+    renderOfferCard(offer, AuthorizationStatus.NoAuth);
+    fireEvent.click(screen.getByRole('button'));
+    expect(screen.getByText('Login Page')).toBeInTheDocument();
+  });
+
+  it('should dispatch toggleFavorite when bookmark is clicked by authorized user', async () => {
+    const offer = {...makeMockOffer(), isFavorite: false};
+    const updated = {...offer, isFavorite: true};
+    mockAPI.onPost(`/favorite/${offer.id}/1`).reply(200, updated);
+
+    const store = makeStore(AuthorizationStatus.Auth, [offer]);
+    render(
+      <Provider store={store}>
+        <MemoryRouter>
+          <OfferCard offer={offer} block="cities" />
+        </MemoryRouter>
+      </Provider>
+    );
+
+    fireEvent.click(screen.getByRole('button'));
+    await vi.waitFor(() => {
+      expect(store.getState()[NameSpace.Data].favoriteOffers).toContainEqual(updated);
+    });
   });
 });

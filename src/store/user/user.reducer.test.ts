@@ -20,7 +20,7 @@ describe('userReducer', () => {
     expect(result.authorizationStatus).toBe(AuthorizationStatus.Auth);
   });
 
-  it('should set requireAuthorization to NoAuth', () => {
+  it('should set authorizationStatus to NoAuth on requireAuthorization', () => {
     const result = userReducer(initialState, requireAuthorization(AuthorizationStatus.NoAuth));
     expect(result.authorizationStatus).toBe(AuthorizationStatus.NoAuth);
   });
@@ -33,7 +33,7 @@ describe('userReducer', () => {
   });
 
   it('should set NoAuth on checkAuth.rejected', () => {
-    const result = userReducer(initialState, checkAuth.rejected(null, ''));
+    const result = userReducer(initialState, checkAuth.rejected(null, '', undefined));
     expect(result.authorizationStatus).toBe(AuthorizationStatus.NoAuth);
     expect(result.userData).toBeNull();
   });

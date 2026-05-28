@@ -3,7 +3,7 @@ import {render} from '@testing-library/react';
 import Spinner from './spinner';
 
 describe('Spinner', () => {
-  it('should render without crashing', () => {
+  it('should render spinner element', () => {
     const {container} = render(<Spinner />);
     expect(container.querySelector('.spinner')).toBeInTheDocument();
   });
